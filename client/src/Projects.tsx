@@ -14,7 +14,7 @@ type Project = {
     client?: Client;
 };
 
-function Projects() {
+function Projects({ userRole }: { userRole?: string }) {
     const [projects, setProjects] = useState<Project[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
 
@@ -82,6 +82,7 @@ function Projects() {
                 <p>Manage your projects and clients</p>
             </div>
 
+            {userRole !== "DEVELOPER" && (
             <form className="project-form" onSubmit={createProject}>
                 <input
                     placeholder="Project name"
@@ -110,6 +111,7 @@ function Projects() {
 
                 <button type="submit" className="primary-button">Add Project</button>
             </form>
+            )}
 
             <div className="card tasks-card">
                 <div className="card-header">

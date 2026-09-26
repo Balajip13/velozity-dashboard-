@@ -76,7 +76,7 @@ function App() {
   const [page, setPage] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsDropdownOpen, setNotificationsDropdownOpen] = useState(false);
-  const [dropdownNotifications, setDropdownNotifications] = useState<any[]>([]);
+
 
   const handleNavClick = (pageName: string) => {
     setPage(pageName);
@@ -352,11 +352,11 @@ function App() {
         {page === "clients" ? (
           <Clients />
         ) : page === "projects" ? (
-          <Projects />
+          <Projects userRole={user.role} />
         ) : page === "developers" ? (
           <Developers />
         ) : page === "tasks" ? (
-          <Tasks />
+          <Tasks userRole={user.role} />
         ) : page === "notifications" ? (
           <Notifications />
         ) : (

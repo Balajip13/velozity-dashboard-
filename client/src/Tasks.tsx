@@ -29,7 +29,7 @@ type Task = {
     };
 };
 
-function Tasks() {
+function Tasks({ userRole }: { userRole?: string }) {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
     const [developers, setDevelopers] = useState<Developer[]>([]);
@@ -259,6 +259,7 @@ function Tasks() {
                 </div>
 
                 {/* Creation Form */}
+                {userRole !== "DEVELOPER" && (
                 <div className="task-creation-form">
                     <div className="task-creation-grid">
                         <input className="task-creation-control" type="text" placeholder="Task title" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -289,6 +290,7 @@ function Tasks() {
                         </button>
                     </div>
                 </div>
+                )}
 
                 {/* Task Table */}
                 {tasks.length === 0 ? (
@@ -345,9 +347,11 @@ function Tasks() {
                                             </select>
                                         </td>
                                         <td style={{ textAlign: 'right' }}>
+                                            {userRole !== "DEVELOPER" && (
                                             <button className="delete-text-button" onClick={() => deleteTask(task.id)}>
                                                 Delete
                                             </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
