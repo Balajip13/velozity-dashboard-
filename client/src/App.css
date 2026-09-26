@@ -510,6 +510,7 @@ nav a.active {
   white-space: nowrap;
   flex-shrink: 0;
   margin-left: 24px;
+  margin-right: 28px;
 }
 
 
@@ -541,7 +542,22 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+}
+
+.tasks-table-wrapper table {
   min-width: 1200px;
+}
+
+.table-wrapper table {
+  table-layout: fixed;
+  min-width: 100%;
+}
+
+.table-wrapper table td,
+.table-wrapper table th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 th {
