@@ -306,7 +306,7 @@ function Tasks({ userRole }: { userRole?: string }) {
                                 <col style={{ width: '10%' }} />
                                 <col style={{ width: '10%' }} />
                                 <col style={{ width: '13%' }} />
-                                <col style={{ width: '6%' }} />
+                                {userRole !== "DEVELOPER" && <col style={{ width: '6%' }} />}
                             </colgroup>
                             <thead>
                                 <tr>
@@ -317,7 +317,7 @@ function Tasks({ userRole }: { userRole?: string }) {
                                     <th>DUE DATE</th>
                                     <th>PRIORITY</th>
                                     <th>STATUS</th>
-                                    <th style={{ textAlign: 'right' }}>ACTION</th>
+                                    {userRole !== "DEVELOPER" && <th style={{ textAlign: 'right' }}>ACTION</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -346,13 +346,13 @@ function Tasks({ userRole }: { userRole?: string }) {
                                                 <option value="OVERDUE">OVERDUE</option>
                                             </select>
                                         </td>
+                                        {userRole !== "DEVELOPER" && (
                                         <td style={{ textAlign: 'right' }}>
-                                            {userRole !== "DEVELOPER" && (
                                             <button className="delete-text-button" onClick={() => deleteTask(task.id)}>
                                                 Delete
                                             </button>
-                                            )}
                                         </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
