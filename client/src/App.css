@@ -462,7 +462,7 @@ nav a.active {
 }
 
 .activity-feed {
-  max-height: 400px;
+  max-height: 500px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -472,7 +472,7 @@ nav a.active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 0;
+  padding: 20px 0;
   border-bottom: 1px solid #E5E5E5;
 }
 
@@ -532,7 +532,8 @@ nav a.active {
   align-items: center;
 }
 
-.table-wrapper {
+.table-wrapper,
+.tasks-table-wrapper {
   overflow-x: auto;
 }
 
@@ -540,6 +541,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
+  min-width: 1200px;
 }
 
 th {
@@ -556,7 +558,7 @@ th {
 
 th,
 td {
-  padding: 16px 24px;
+  padding: 20px 16px;
   border-bottom: 1px solid #E8E8E8;
   white-space: nowrap;
   text-align: left;
