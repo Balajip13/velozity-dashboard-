@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  PROJECT_MANAGER
+  DEVELOPER
+}
+
+model User {
+  id              Int            @id @default(autoincrement())
+  name            String
+  email           String         @unique
+  password        String
+  role            Role           @default(DEVELOPER)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  projectsCreated Project[]
+  tasksAssigned   Task[]
+  activityLogs    ActivityLog[]
+  notifications   Notification[]
+}
+
+model Client {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  clientId    Int
+  createdById Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  client    Client @relation(fields: [clientId], references: [id])
+  createdBy User   @relation(fields: [createdById], references: [id])
+  tasks     Task[]
+
+  @@index([clientId])
+  @@index([createdById])
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  OVERDUE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model Task {
+  id                  Int          @id @default(autoincrement())
+  title               String
+  description         String?
+  projectId           Int
+  assignedDeveloperId Int
+  status              TaskStatus   @default(TODO)
+  priority            TaskPriority @default(MEDIUM)
+  dueDate             DateTime
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  project           Project       @relation(fields: [projectId], references: [id])
+  assignedDeveloper User          @relation(fields: [assignedDeveloperId], references: [id])
+  activityLogs      ActivityLog[]
+
+  @@index([projectId])
+  @@index([assignedDeveloperId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+}
+
+model ActivityLog {
+  id         Int        @id @default(autoincrement())
+  taskId     Int
+  userId     Int
+  fromStatus TaskStatus
+  toStatus   TaskStatus
+  createdAt  DateTime   @default(now())
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}

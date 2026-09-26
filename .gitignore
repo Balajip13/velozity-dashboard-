@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+
+# Test / coverage output
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Temporary files
+*.tmp
+*.temp
+
+# Local database / generated files
+*.sqlite
+*.sqlite3
+
+# Agents / AI generated
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
+
+# Exclude generated prisma client from git if generated inside prisma directory, 
+# but usually it goes to node_modules which is ignored.
