@@ -19,15 +19,20 @@ export function getIO() {
     return io;
 }
 
+const SOCKET_ALLOWED_ORIGINS = [
+    /^http:\/\/localhost:\d+$/,
+    /^https:\/\/.*\.vercel\.app$/,
+];
+
 export function initSocket(server: HttpServer) {
     io = new Server(server, {
         cors: {
             origin: (origin, callback) => {
-                if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+                if (!origin || SOCKET_ALLOWED_ORIGINS.some((r) => r.test(origin))) {
                     callback(null, true);
-                    return;
+                } else {
+                    callback(new Error("Not allowed by CORS"));
                 }
-                callback(new Error("Not allowed by CORS"));
             },
             credentials: true,
         },
