@@ -45,6 +45,10 @@ import { authenticate } from "./middleware/auth.js";
 
 app.use("/api/auth", authRoutes(prisma));
 
+app.get("/healthz", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+});
+
 app.use(authenticate);
 
 app.use("/api/clients", clientRoutes(prisma));
@@ -61,9 +65,6 @@ app.get("/", (_req, res) => {
     });
 });
 
-app.get("/healthz", (_req, res) => {
-    res.status(200).json({ status: "ok" });
-});
 
 app.get("/api/health", async (_req, res) => {
     try {
