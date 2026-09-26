@@ -991,10 +991,26 @@ td strong {
   border: 1px solid #E5E5E5;
   font-size: 14px;
   outline: none;
+  background-color: #ffffff;
+  color: #111111;
+  width: 100%;
+}
+
+.login-container input::placeholder {
+  color: #888888;
 }
 
 .login-container input:focus {
   border-color: #111111;
+}
+
+/* Fix browser autofill styling for login inputs */
+.login-container input:-webkit-autofill,
+.login-container input:-webkit-autofill:hover, 
+.login-container input:-webkit-autofill:focus, 
+.login-container input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+  -webkit-text-fill-color: #111111 !important;
 }
 
 /* Notifications page header — centered title with button on the right */
