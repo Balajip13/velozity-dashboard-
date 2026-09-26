@@ -8,7 +8,7 @@ import Notifications from "./Notifications";
 import Login from "./Login";
 import { socket } from "./lib/socket";
 
-const API = "http://localhost:5000/api";
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:5000/api";
 
 type Stats = {
   clients: number;

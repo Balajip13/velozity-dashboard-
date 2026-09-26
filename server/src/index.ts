@@ -24,15 +24,19 @@ startOverdueTasksJob();
 
 const PORT = process.env.PORT || 5000;
 
+const ALLOWED_ORIGINS = [
+    /^http:\/\/localhost:\d+$/,
+    /^https:\/\/.*\.vercel\.app$/,
+];
+
 app.use(
     cors({
         origin: (origin, callback) => {
-            if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
+            if (!origin || ALLOWED_ORIGINS.some((r) => r.test(origin))) {
                 callback(null, true);
-                return;
+            } else {
+                callback(new Error("Not allowed by CORS"));
             }
-
-            callback(new Error("Not allowed by CORS"));
         },
         credentials: true,
     })
