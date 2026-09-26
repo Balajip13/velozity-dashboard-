@@ -1,340 +1,369 @@
 # Velozity Dashboard
 
-This is a full-stack project management dashboard I built for my technical assessment. It lets admins, project managers and developers manage clients, projects and tasks. The main things I focused on were role-based access control, real-time updates via Socket.IO, and a background job for overdue task detection. The frontend is React with TypeScript and the backend is Express with PostgreSQL.
+Velozity Dashboard is a full-stack project and task management application built as a technical assessment. It provides role-based access for Admins, Project Managers, and Developers, featuring real-time task and activity updates, built-in notifications, and automated background processing.
+
+## Live Demo
+
+- **Frontend (Live Application):** [https://velozity-dashboard-git-main-balajis-projects-8fdf9e35.vercel.app/](https://velozity-dashboard-git-main-balajis-projects-8fdf9e35.vercel.app/)
+- **Backend API:** [https://velozity-dashboard-y82j.onrender.com/](https://velozity-dashboard-y82j.onrender.com/)
+- **Health Check:** [https://velozity-dashboard-y82j.onrender.com/healthz](https://velozity-dashboard-y82j.onrender.com/healthz)
+- **GitHub Repository:** [https://github.com/Balajip13/velozity-dashboard-](https://github.com/Balajip13/velozity-dashboard-)
+
+---
+
+## Seed Data & Demo Credentials
+
+The database comes pre-seeded with comprehensive assessment data. Running the seed script completely clears any existing data and repopulates the database. 
+
+**Seeded Assessment Data:**
+- 1 Admin
+- 2 Project Managers
+- 4 Developers
+- 3 Clients
+- 3 Projects
+- 15 Tasks (exactly 5 tasks per project)
+- 2 Overdue tasks
+- 10 pre-existing activity logs
+- 4 pre-existing notifications
+
+**Demo Credentials:**
+
+**ADMIN:**
+- Email: `admin@velozity.com`
+- Password: `Admin@123`
+
+**PROJECT MANAGER:**
+- Email: `sarah.pm@velozity.com`
+- Password: `PM@123`
+- Email: `michael.pm@velozity.com`
+- Password: `PM@123`
+
+**DEVELOPERS:**
+- Email: `john@velozity.com`
+- Password: `Dev@123`
+- Email: `priya@velozity.com`
+- Password: `Dev@123`
+- Email: `arun@velozity.com`
+- Password: `Dev@123`
+- Email: `david@velozity.com`
+- Password: `Dev@123`
+
+---
+
+## Features
+
+- **Authentication:** JWT-based access and refresh tokens stored securely in HTTP-only cookies.
+- **Role-Based Access Control (RBAC):** Data isolation and capabilities based on user role.
+- **Project & Client Management:** Centralized project creation assigned to specific clients.
+- **Task Management:** Granular tracking of tasks, assignments, priorities, and due dates.
+- **Activity Feed:** Detailed audit logging of task status transitions.
+- **Real-Time Updates:** Live propagation of task updates, activity logs, and notifications.
+- **Notifications:** In-app notification system with unread counts, read receipts, and real-time delivery.
+- **Background Scheduler:** Automated cron job that identifies and marks past-due tasks as OVERDUE.
+- **Dashboard Stats:** Role-scoped metrics showing upcoming tasks, distribution, and project summaries.
 
 ---
 
 ## Tech Stack
 
 **Frontend**
-- React 19
+- React 19 (Vite)
 - TypeScript
-- Vite
+- Vanilla CSS
+- Socket.IO Client
 
 **Backend**
-- Node.js
-- Express 5
+- Node.js & Express
 - TypeScript
+- Prisma ORM
+- JSON Web Tokens (JWT) & bcrypt
+- Socket.IO (WebSockets)
+- node-cron
 
 **Database**
-- PostgreSQL
-- Prisma 7
+- PostgreSQL (Hosted on Render)
 
-**Other**
-- Socket.IO (real-time updates)
-- JWT + HttpOnly cookies (authentication)
-- bcrypt (password hashing)
-- node-cron (background job)
+**Deployment**
+- Frontend: Vercel
+- Backend & DB: Render
 
 ---
 
-## Features
+## Architecture
 
-- Login and logout with JWT access and refresh tokens stored in HttpOnly cookies
-- Session restoration on browser refresh (tries `/auth/me`, falls back to `/auth/refresh`)
-- Role-based access control for Admin, Project Manager and Developer
-- Project creation and management
-- Task creation with title, description, assigned developer, priority and due date
-- Task status management (TODO, IN_PROGRESS, IN_REVIEW, DONE, OVERDUE)
-- Activity log for every task status change
-- Real-time activity feed over Socket.IO
-- Online user count shown on the dashboard
-- Notifications on task assignment, task review, and overdue detection
-- Real-time notification badge (unread count)
-- Background job that marks tasks as OVERDUE every minute
-- Role-scoped dashboard statistics
-- Server-side task filtering by status, priority and overdue flag
-- Responsive layout (mobile, tablet, desktop)
+```text
+       [ Vercel ]
+   React + TypeScript
+           |
+   REST + Socket.IO
+           |
+       [ Render ]
+Node + Express + TypeScript
+           |
+         Prisma
+           |
+   Render PostgreSQL
+```
 
----
-
-## Roles
-
-### Admin
-Has full access. Can manage clients, create projects and tasks, view all data across the system and see any user's notifications.
-
-### Project Manager
-Can create and manage their own projects and the tasks under those projects. Can assign tasks to developers. Can view clients and the developer list. Cannot manage clients.
-
-### Developer
-Can view projects they are assigned to and tasks assigned to them. Can update the status of their own tasks. Cannot create projects or tasks, and cannot view clients or other developers.
-
-All role restrictions are enforced on the server — not just on the frontend.
+The frontend operates as a Single Page Application (SPA). It communicates with the Express backend via a REST API (using secure HTTP-only cookies for authentication) and establishes a persistent WebSocket connection for real-time dashboard events.
 
 ---
 
 ## Authentication
 
-Authentication uses JWT. On login, the server issues an access token (15 minutes) and a refresh token (7 days), both set as HttpOnly cookies.
-
-Every protected API route goes through `authenticate` middleware that reads and verifies the `accessToken` cookie. Routes that need a specific role go through `authorize` middleware on top of that.
-
-When the page is refreshed, the frontend calls `GET /api/auth/me`. If the access token is still valid it gets the user and stays on the dashboard. If `/me` returns a 401, it tries `POST /api/auth/refresh`. If the refresh token is still valid, a new access token is issued and `/me` is retried. Only if both fail does the user get redirected to the login page.
-
-Logout calls `POST /api/auth/logout` which clears both cookies on the server side.
-
-Socket.IO connections are authenticated the same way — the server reads the `accessToken` cookie from the WebSocket handshake before letting the connection through.
+Authentication relies on robust JWT mechanisms:
+- **Login:** Issues a short-lived `accessToken` (15m) and a long-lived `refreshToken` (7d).
+- **Security:** Both tokens are stored in `HttpOnly` cookies. In production (`NODE_ENV=production`), they are configured with `Secure: true` and `SameSite: None` to safely cross origins from Vercel to Render.
+- **Refresh Flow:** When the access token expires, the client silently requests a new one via the `/api/auth/refresh` endpoint.
 
 ---
 
-## Real-Time Features
+## Role-Based Access Control (RBAC)
 
-I used Socket.IO for the real-time parts. When a user connects, the server puts them into a room based on their role:
+Role-based access is enforced on the backend by middleware (`authorize(...roles)`) and row-level data checks. Frontend UI components conditionally hide controls based on role, but the backend is the definitive security boundary.
 
-- Admin → `admin` room
-- Project Manager → `pm_{userId}` room
-- Developer → `dev_{userId}` room
+### Admin
+- Access to all resources across the application.
+- Full project, task, client, and developer management capabilities.
 
-When a task status changes, the server emits `taskStatusChanged` to the admin, the relevant PM and the assigned developer. The activity feed on the dashboard updates immediately without any polling.
+### Project Manager
+- **Isolation:** Restricted to viewing and managing tasks associated with their *own* created projects.
+- **Capabilities:** Can create projects, create tasks, and fully manage tasks within their domain.
+- **Visibility:** Can view all clients and developers to assign them to projects/tasks.
 
-On connection, the server also sends the last 20 activity log entries scoped to what the user is allowed to see, and the current unread notification count.
-
-Online user count is tracked per unique user ID (not per socket), so if the same user has two tabs open it counts as one.
-
----
-
-## Overdue Task Job
-
-There is a node-cron job that runs every minute. It queries for tasks where the due date has passed and the status is not `DONE` or `OVERDUE`. For each task found it:
-
-1. Updates the status to `OVERDUE`
-2. Creates an activity log entry
-3. Sends a notification to the assigned developer and the project manager
-4. Emits the status change via Socket.IO
-
-The job has a guard flag to prevent overlapping runs. It runs inside the same process as the server, so it is not a distributed job queue — it is just a simple in-process scheduler.
+### Developer
+- **Data Isolation:** Cannot access unrelated PM or project data. They only see projects and tasks they are explicitly assigned to.
+- **Restrictions:** Cannot create projects, create tasks, or delete tasks.
+- **Capabilities:** Can only update the status of their *own* assigned tasks. The backend rejects attempts to update another developer's task.
 
 ---
 
-## Database
+## Dashboards
 
-PostgreSQL with Prisma for database access.
+### Project Manager Dashboard
+Displays data scoped precisely to the PM's ownership:
+- Statistics (Projects managed, Tasks managed, distribution by Priority/Status).
+- Recent Tasks across their active projects.
+- Relevant notifications and activity logs for tasks within their purview.
 
-**Models:**
-- `User` — stores name, email, hashed password and role
-- `Client` — external client organization linked to projects
-- `Project` — created by a user, associated with a client, has many tasks
-- `Task` — assigned to a developer, belongs to a project, has status, priority and due date
-- `ActivityLog` — records every task status change with the user who made it and the from/to status
-- `Notification` — per-user messages with a `read` flag
+### Developer Dashboard
+Displays data isolated to the developer's assigned work:
+- Statistics (Total assigned tasks, Status distribution, Priority distribution).
+- Upcoming assigned tasks ordered by priority and due date.
+- Relevant notifications and personal activity logs.
 
-**Relationships:**
-- A user can create many projects and be assigned many tasks
-- A client has many projects
-- A project has many tasks
-- A task has many activity logs
+---
+
+## Task Management & Filtering
+
+Tasks track title, description, assigned developer, project, status, priority, and due date. 
+
+The API supports precise filtering via query parameters:
+- `status`: Filter by status (`TODO`, `IN_PROGRESS`, `IN_REVIEW`, `DONE`, `OVERDUE`).
+- `priority`: Filter by priority (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
+- `dueDateFrom`: Filter tasks due on or after a specific Date string.
+- `dueDateTo`: Filter tasks due on or before a specific Date string.
+- `overdue`: Boolean flag.
+
+**Example Usage:**
+`GET /api/tasks?status=TODO&priority=HIGH`
+`GET /api/tasks?dueDateFrom=2024-01-01&dueDateTo=2024-12-31`
+
+---
+
+## Activity Feed
+
+The Activity Feed provides a chronological audit trail of task status transitions. 
+Each activity entry explicitly contains:
+- **Who:** The user who performed the action (e.g., "John Developer").
+- **What:** The previous status and the new status (e.g., "TODO → IN_PROGRESS").
+- **When:** The exact timestamp of the change.
+- **Context:** The associated task and project names.
+
+**Role-Filtered:** Developers only see activity for tasks they are assigned to. PMs see activity for all tasks within their projects.
+
+---
+
+## Real-Time & Offline Behavior
+
+Real-time communication is powered entirely by **Socket.IO** (WebSockets) with zero HTTP polling.
+- **Live Updates:** Task status changes, activity feed entries, and notifications are instantly pushed to connected clients.
+- **Role/Access Filtering:** Socket emissions target specific user rooms (`dev_1`, `pm_2`), ensuring users only receive real-time data they are authorized to see.
+- **Online Users:** The server tracks active socket connections to display a live "Online Users" count.
+- **Offline Behavior:** Activity logs and notifications are persisted in the PostgreSQL database. When users who were offline return, the backend automatically retrieves their latest 20 persisted activity events upon dashboard load.
+
+---
+
+## Notifications
+
+Notifications are fully persisted in the database and delivered in real time via Socket.IO.
+**Actual Triggers:**
+- A Developer receives a notification when a new task is assigned to them.
+- A Project Manager receives a notification when a task moves to `IN_REVIEW`.
+- Both receive notifications when the background scheduler marks a task as `OVERDUE`.
+
+**Capabilities:**
+- Unread notification count is available and updates live.
+- Individual notifications can be marked as read (`PUT /api/notifications/:id/read`).
+- Mark-all-as-read is fully implemented (`PUT /api/notifications/read-all`).
+- Notifications can be permanently deleted (`DELETE /api/notifications/:id`).
+
+---
+
+## Background Scheduler
+
+A background job runs automatically using `node-cron`.
+Every minute, the scheduler queries the database for tasks that are past their due date and not currently `DONE` or `OVERDUE`. It automatically transitions these tasks to `OVERDUE`, generates an activity log, and emits real-time WebSocket notifications to the assigned Developer and the Project Manager.
+
+---
+
+## Main API Endpoints
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/api/auth/login` | Authenticate user & set HTTP-only cookies |
+| POST | `/api/auth/refresh` | Refresh expired access token via cookie |
+| POST | `/api/auth/logout` | Clear authentication cookies |
+| GET | `/api/auth/me` | Retrieve authenticated user profile |
+| GET | `/api/dashboard/stats` | Retrieve role-scoped dashboard metrics |
+| GET | `/api/projects` | List projects (role-scoped) |
+| POST | `/api/projects` | Create a project (Admin/PM only) |
+| GET | `/api/tasks` | List tasks (role-scoped, supports query filters) |
+| POST | `/api/tasks` | Create a task (Admin/PM only) |
+| PATCH | `/api/tasks/:id/status`| Update task status (Row-level access check) |
+| DELETE | `/api/tasks/:id` | Delete a task (Admin/PM only) |
+| GET | `/api/activity` | Retrieve last 20 activity logs (role-scoped) |
+| GET | `/api/notifications` | Get user notifications |
+| PUT | `/api/notifications/:id/read` | Mark specific notification as read |
+| PUT | `/api/notifications/read-all`| Mark all notifications as read |
+| DELETE | `/api/notifications/:id` | Delete notification |
+| GET | `/healthz` | Express server health check |
 
 ---
 
 ## Project Structure
 
-```
-velozity-dashboard/
-├── client/
-│   ├── src/
-│   │   ├── lib/
-│   │   │   └── socket.ts
-│   │   ├── App.tsx
-│   │   ├── Login.tsx
-│   │   ├── Projects.tsx
-│   │   ├── Tasks.tsx
-│   │   ├── Clients.tsx
-│   │   ├── Developers.tsx
-│   │   └── Notifications.tsx
-│   └── package.json
-│
-├── server/
-│   ├── prisma/
-│   │   ├── schema.prisma
-│   │   ├── seed.ts
-│   │   └── migrations/
-│   ├── src/
-│   │   ├── jobs/
-│   │   │   └── overdueTasks.ts
-│   │   ├── lib/
-│   │   │   ├── prisma.ts
-│   │   │   └── socket.ts
-│   │   ├── middleware/
-│   │   │   └── auth.ts
-│   │   ├── routes/
-│   │   │   ├── auth.ts
-│   │   │   ├── clients.ts
-│   │   │   ├── dashboard.ts
-│   │   │   ├── developers.ts
-│   │   │   ├── notifications.ts
-│   │   │   ├── projects.ts
-│   │   │   ├── tasks.ts
-│   │   │   └── activity.ts
-│   │   └── index.ts
-│   ├── .env
-│   ├── .env.example
-│   └── package.json
-│
-└── README.md
+```text
+client/
+server/
+  ├── prisma/
+  │    ├── schema.prisma
+  │    └── seed.ts
+  └── src/
+       ├── jobs/
+       ├── lib/
+       ├── middleware/
+       ├── routes/
+       └── index.ts
 ```
 
 ---
 
-## Running Locally
-
-### Prerequisites
-- Node.js (LTS)
-- PostgreSQL running locally
-- npm
+## Local Setup
 
 ### 1. Clone the repository
-
 ```bash
-git clone <repository-url>
-cd velozity-dashboard
+git clone https://github.com/Balajip13/velozity-dashboard-.git
+cd velozity-dashboard-
 ```
 
-### 2. Set up the server
-
+### 2. Install Dependencies
 ```bash
+# Terminal 1: Backend
 cd server
+npm install
+
+# Terminal 2: Frontend
+cd client
 npm install
 ```
 
-Create a `.env` file using `.env.example` as a reference:
-
+### 3. Environment Configuration
+Create a `.env` file in the `server` directory:
 ```env
-DATABASE_URL=postgresql://USER:PASSWORD@localhost:5432/velozity_dashboard
-JWT_SECRET=your_access_token_secret
-REFRESH_TOKEN_SECRET=your_refresh_token_secret
+DATABASE_URL="postgresql://user:password@localhost:5432/velozity"
+JWT_SECRET="your-super-secret-jwt-key"
+REFRESH_TOKEN_SECRET="your-super-secret-refresh-key"
+PORT=5000
+NODE_ENV="development"
 ```
 
-Run the migrations and seed the database:
+Create a `.env` file in the `client` directory:
+```env
+VITE_API_URL="http://localhost:5000/api"
+```
 
+### 4. Database Setup & Seeding
+Ensure PostgreSQL is running locally, then initialize the database:
 ```bash
+cd server
 npx prisma generate
-npx prisma migrate dev
+npx prisma db push
 npm run seed
 ```
 
-Start the server:
-
+### 5. Run the Application
 ```bash
+# Terminal 1: Backend
+cd server
 npm run dev
-```
 
-The API runs on `http://localhost:5000`.
-
-### 3. Set up the client
-
-Open a second terminal:
-
-```bash
+# Terminal 2: Frontend
 cd client
-npm install
 npm run dev
 ```
 
-The frontend runs on `http://localhost:5173`.
-
 ---
 
-## Environment Variables
+## Security
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `JWT_SECRET` | Secret for signing access tokens |
-| `REFRESH_TOKEN_SECRET` | Secret for signing refresh tokens |
-
-Do not use the same value for both secrets.
-
----
-
-## Test Credentials
-
-These are created by the seed script.
-
-| Role | Email | Password |
-|---|---|---|
-| Admin | admin@velozity.com | Admin@123 |
-| Project Manager | sarah.pm@velozity.com | PM@123 |
-| Project Manager | michael.pm@velozity.com | PM@123 |
-| Developer | john@velozity.com | Dev@123 |
-| Developer | priya@velozity.com | Dev@123 |
-| Developer | arun@velozity.com | Dev@123 |
-| Developer | david@velozity.com | Dev@123 |
-
-The seed also creates 3 clients, 3 projects, 15 tasks (5 per project), 10 activity logs, 2 overdue tasks and 4 notifications.
-
----
-
-## API Access by Role
-
-| Capability | Admin | Project Manager | Developer |
-|---|---|---|---|
-| View clients | Yes | Yes | No |
-| Create / edit / delete client | Yes | No | No |
-| View projects | All | Own only | Assigned tasks only |
-| Create project | Yes | Yes | No |
-| Edit / delete project | Yes | Own only | No |
-| View tasks | All | Own projects | Assigned only |
-| Create task | Yes | Own projects | No |
-| Edit task (all fields) | Yes | Own projects | No |
-| Update task status | Yes | Own projects | Assigned only |
-| View developers | Yes | Yes | No |
-| View notifications | All (any user) | Own | Own |
+- **JWT & HttpOnly Cookies:** Access and refresh tokens are securely stored in `HttpOnly` cookies, preventing XSS extraction.
+- **Production Cookies:** In production (`NODE_ENV=production`), cookies use `Secure: true` and `SameSite: None`.
+- **Password Hashing:** Passwords are mathematically salted and hashed via `bcrypt` before storage.
+- **CORS Configuration:** Express REST routes and Socket.IO allow cross-origin requests only from localhost and the explicit Vercel domain.
+- **Backend RBAC:** Access to project and task data is checked based on the authenticated user's role and permissions.
+- **Environment Secrets:** Sensitive credentials and database URLs are injected via `.env` variables.
 
 ---
 
 ## Known Limitations
 
-- The overdue task job runs in the same process as the server. There is no separate worker or job queue. If the server goes down, the job stops until it restarts.
-- Refresh tokens are not stored in the database. There is no server-side token revocation — once a refresh token is issued, it stays valid until it expires (7 days) even after logout, unless the cookie is cleared from the browser.
-- No pagination on list endpoints. All matching records are returned.
-- CORS is currently configured to allow any `localhost` origin. This needs to be updated before deploying.
-- Cookies use `secure: false` for local development over HTTP. For production this needs to be `secure: true` with HTTPS.
+- **Render Cold Starts:** The backend is hosted on Render's free tier. The Render free-tier backend may experience a cold start after a period of inactivity.
 
 ---
 
-## Deployment
+## Assessment Requirement Coverage
 
-Not deployed. Configured for local development only.
-
-To deploy, the main things to update are:
-
-- `DATABASE_URL` to a hosted PostgreSQL instance
-- Cookie settings: `secure: true`, appropriate `sameSite` value
-- CORS origin to the production frontend URL
-- The hardcoded API URL in the frontend (`http://localhost:5000/api`) to the production URL
-- Build commands: `npm run build` in both `client` and `server`, then serve `server/dist/index.js`
-
----
-
-## Architecture Decisions
-
-- **Frontend (React/TypeScript)**: Chosen for component reusability and strong typing, which prevents a lot of runtime errors and makes the codebase easier to scale.
-- **Backend (Node/Express)**: Simple, lightweight, and fast to set up. Provides a great ecosystem for building REST APIs.
-- **Database (PostgreSQL/Prisma)**: Postgres is robust for relational data with strict constraints. Prisma provides excellent type safety and auto-completion, acting as a great ORM.
-- **Authentication (JWT/Cookies)**: JWT with HttpOnly cookies keeps tokens secure from XSS attacks while maintaining a stateless backend.
-- **Real-time (Socket.IO)**: Socket.IO handles fallbacks and reconnection automatically, making it perfect for the live activity feed and notification counters without the complexity of raw WebSockets.
-- **Background Jobs (node-cron)**: A simple in-memory cron job is enough for this size of project to mark overdue tasks, avoiding the overhead of external job queues like Redis/BullMQ.
-
----
-
-## Database Indexing
-
-Indexes are defined in `schema.prisma` to optimize query performance on frequently filtered or sorted columns:
-
-- `Project`: `[clientId]`, `[createdById]` - for faster PM dashboard queries.
-- `Task`: `[projectId]`, `[assignedDeveloperId]`, `[status]`, `[priority]`, `[dueDate]` - speeds up developer task filtering and the overdue cron job.
-- `ActivityLog`: `[taskId]`, `[userId]`, `[createdAt]` - optimizes fetching the most recent activity feed.
-- `Notification`: `[userId]`, `[read]`, `[createdAt]` - for quickly counting unread notifications per user.
+| Assessment Requirement | Implementation |
+|---|---|
+| React + TypeScript | Implemented |
+| Node/Express + TypeScript | Implemented |
+| PostgreSQL & Prisma | Implemented |
+| JWT Access & Refresh Tokens | Implemented |
+| HTTP-only Refresh Cookie | Implemented |
+| RBAC (Admin, PM, Developer) | Implemented |
+| Developer Data Isolation | Implemented |
+| Projects & Tasks | Implemented |
+| Task Status, Priority, Due Dates | Implemented |
+| Activity Logs (Who/What/When) | Implemented |
+| WebSocket / Socket.IO | Implemented |
+| No Polling | Implemented |
+| Role-filtered real-time data | Implemented |
+| Online Users | Implemented |
+| Offline Activity Retrieval (Latest 20) | Implemented |
+| Assignment Notifications | Implemented |
+| PM Notification for IN REVIEW | Implemented |
+| Unread Notification Count | Implemented |
+| Mark Read / Mark All Read | Implemented |
+| Background Overdue Scheduler | Implemented |
+| Task Filtering | Implemented |
+| Server-side Validation & API Errors | Implemented |
+| Environment Secrets | Implemented |
+| Seed Data with required counts | Implemented |
+| Vercel & Render Deployment | Implemented |
 
 ---
 
-## Assessment Explanation
+## Technical Summary
 
-**The hardest technical problem and how I solved it:**
-The hardest problem was managing the real-time Socket.IO connections alongside the stateless HTTP JWT authentication. Since WebSockets are stateful, maintaining security when a token expires is tricky. I solved this by adding authentication middleware directly to the Socket.IO handshake that reads the `accessToken` cookie. If the token is invalid, the connection is rejected. On the frontend, the socket connects only after HTTP authentication is successful, keeping the auth state synchronized.
-
-**My approach for the real-time activity feed:**
-For the activity feed, I needed a way to broadcast updates without spamming users who shouldn't see them. I assigned users to specific Socket.IO "rooms" based on their role and ID (e.g., `pm_{id}`, `dev_{id}`, `admin`). When a task changes, the server explicitly emits the event only to the rooms of the relevant PM, Developer, and Admins. This keeps the logic clean and secure.
-
-**One thing I would do differently:**
-If I had to do this again, I would implement a dedicated state management library (like Redux Toolkit or Zustand) on the frontend. Passing state around and re-fetching full arrays (like projects and tasks) in `App.tsx` on every change works for a small app, but as the app grows, a structured global state with optimistic UI updates would be much more maintainable and performant.
+This project implements a full-stack project and task management dashboard using React, TypeScript, Node.js, Express, Prisma, PostgreSQL, JWT authentication, Socket.IO, and node-cron. It includes role-based access for Admins, Project Managers, and Developers, project and task management, activity tracking, real-time updates, notifications, overdue task processing, dashboard filtering, and seeded demo data. The application is deployed with Vercel for the frontend and Render for the backend and PostgreSQL database.
